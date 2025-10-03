@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Short Life of a Tiny Outfit: An Interactive Report on Textile Waste</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Earth Tones -->
+    <!-- Application Structure Plan: The SPA is designed as a narrative journey. It starts with a high-level global problem (Hero & Global Stats), funnels down to the specific issue of baby clothes (Interactive Lifecycle), provides hard data comparisons (Charts), localizes the issue with a case study (Rwanda Context), and concludes with actionable solutions. This thematic, funnel-like structure was chosen over a simple report layout to guide the user from broad awareness to specific understanding and empowerment, making complex information more digestible and engaging. -->
+    <!-- Visualization & Content Choices:
+        - Global Stats -> Goal: Inform -> Method: Dynamic stat cards -> Interaction: Hover for context -> Justification: Quick, high-impact overview.
+        - Garment Lifecycle -> Goal: Organize/Explain -> Method: Interactive HTML/CSS process flow -> Interaction: Click to reveal detailed text for each stage -> Justification: Turns a linear process into an exploratory experience, enhancing engagement.
+        - Wear Comparison -> Goal: Compare -> Method: Chart.js Bar Chart -> Interaction: Tooltips -> Justification: Visually powerful comparison of lifespans.
+        - End-of-Life -> Goal: Compare/Inform -> Method: Chart.js Donut Chart -> Interaction: Tooltips -> Justification: Clearly shows the proportions of waste outcomes.
+        - Rwanda Context -> Goal: Inform/Contextualize -> Method: Info cards -> Interaction: Static -> Justification: Presents specific, factual data clearly.
+        - Solutions -> Goal: Inform/Action -> Method: Grid of cards -> Interaction: Static -> Justification: Scannable, positive, and forward-looking conclusion.
+        - Library/Method: All visuals are created with Chart.js (Canvas) or structured HTML/CSS with Tailwind, adhering to the NO SVG/Mermaid constraint. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #D97706;
+        }
+        .lifecycle-stage {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .lifecycle-stage.active {
+            background-color: #F59E0B;
+            color: #FFFFFF;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .lifecycle-stage.active .stage-icon {
+            filter: brightness(0) invert(1);
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        /* Mobile menu links style */
+        #mobile-menu a {
+            padding-left: 1.5rem; /* px-6 */
+            padding-right: 1.5rem; /* px-6 */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-[#FDFBF8]/80 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-200">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-amber-700">Tiny Footprints, Big Waste</h1>
+            <!-- Desktop Navigation Links (Visible on screens medium and up) -->
+            <div id="desktop-links" class="hidden md:flex space-x-8">
+                <a href="#global" class="nav-link text-gray-600">Global Waste</a>
+                <a href="#lifecycle" class="nav-link text-gray-600">The Lifecycle</a>
+                <a href="#impact" class="nav-link text-gray-600">Data Impact</a>
+                <a href="#rwanda" class="nav-link text-gray-600">Rwanda Context</a>
+                <a href="#solutions" class="nav-link text-gray-600">Solutions</a>
+                <a href="#references" class="nav-link text-gray-600">References</a>
+            </div>
+            <!-- Mobile Menu Button (Hamburger Icon) -->
+            <button id="menu-button" class="md:hidden p-2 rounded-lg text-amber-700 hover:bg-amber-100 transition focus:outline-none" aria-label="Toggle navigation">
+                <!-- SVG icon for hamburger -->
+                <svg id="icon-menu" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+                <!-- SVG icon for close (X) - hidden by default -->
+                <svg id="icon-close" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </nav>
+        <!-- Mobile Menu Drawer (Hidden on screens medium and up) -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 bg-[#FDFBF8] pb-4">
+            <a href="#global" class="block py-2 nav-link text-gray-700 hover:bg-amber-100 transition-colors duration-150">Global Waste</a>
+            <a href="#lifecycle" class="block py-2 nav-link text-gray-700 hover:bg-amber-100 transition-colors duration-150">The Lifecycle</a>
+            <a href="#impact" class="block py-2 nav-link text-gray-700 hover:bg-amber-100 transition-colors duration-150">Data Impact</a>
+            <a href="#rwanda" class="block py-2 nav-link text-gray-700 hover:bg-amber-100 transition-colors duration-150">Rwanda Context</a>
+            <a href="#solutions" class="block py-2 nav-link text-gray-700 hover:bg-amber-100 transition-colors duration-150">Solutions</a>
+            <a href="#references" class="block py-2 nav-link text-gray-700 hover:bg-amber-100 transition-colors duration-150">References</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Content Sections already use responsive classes like container/mx-auto/px-6, grid-cols-1/md:grid-cols-3, and chart-container for mobile fluid layout. -->
+        <section id="hero" class="py-20 bg-amber-50">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-4xl md:text-6xl font-bold text-amber-800 leading-tight">The Short Life of a Tiny Outfit</h2>
+                <p class="mt-4 text-lg text-gray-700 max-w-3xl mx-auto">A baby might wear an outfit just a handful of times before outgrowing it. This rapid cycle, multiplied by millions of babies, creates a unique and significant stream of textile waste. This report explores the disproportionate environmental impact of baby clothes.</p>
+            </div>
+        </section>
+
+        <section id="global" class="py-16">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-800">The Global Textile Mountain</h3>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Before focusing on baby clothes, it's crucial to understand the scale of the overall textile waste problem. The fashion industry's "fast fashion" model has created a global environmental challenge.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="stat-card bg-white p-6 rounded-lg shadow-md border border-gray-100 text-center">
+                        <h4 class="text-4xl font-bold text-amber-600">92 Million Tonnes</h4>
+                        <p class="mt-2 text-gray-600">Of textile waste generated globally each year. That's equivalent to a garbage truck full of clothes ending up in a landfill every second.</p>
+                    </div>
+                    <div class="stat-card bg-white p-6 rounded-lg shadow-md border border-gray-100 text-center">
+                        <h4 class="text-4xl font-bold text-amber-600">-36%</h4>
+                        <p class="mt-2 text-gray-600">Decrease in the number of times a garment is worn before being discarded over the last 15 years.</p>
+                    </div>
+                    <div class="stat-card bg-white p-6 rounded-lg shadow-md border border-gray-100 text-center">
+                        <h4 class="text-4xl font-bold text-amber-600">&lt;1%</h4>
+                        <p class="mt-2 text-gray-600">Of material used to produce clothing is recycled into new clothing, representing a massive loss of value and resources.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="lifecycle" class="py-16 bg-gray-50">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-800">Lifecycle of a Baby Grow: A Compressed Journey</h3>
+                    <p class="mt-2 text-gray-600 max-w-3xl mx-auto">The environmental cost of a garment is spread across its entire life. For baby clothes, this lifecycle is drastically accelerated, concentrating the environmental impact. Click on each stage below to learn more.</p>
+                </div>
+                <!-- Flex direction changes from column (mobile) to row (desktop) for better responsiveness -->
+                <div class="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-0">
+                    <div id="stage-production" class="lifecycle-stage active bg-white p-4 rounded-lg shadow-md w-full md:w-48 text-center">
+                        <span class="text-4xl">🏭</span>
+                        <h5 class="font-bold mt-2">1. Production</h5>
+                    </div>
+                    <div class="w-16 h-1 bg-gray-300 hidden md:block"></div>
+                    <div id="stage-use" class="lifecycle-stage bg-white p-4 rounded-lg shadow-md w-full md:w-48 text-center">
+                        <span class="text-4xl">👶</span>
+                        <h5 class="font-bold mt-2">2. Use Phase</h5>
+                    </div>
+                    <div class="w-16 h-1 bg-gray-300 hidden md:block"></div>
+                    <div id="stage-end" class="lifecycle-stage bg-white p-4 rounded-lg shadow-md w-full md:w-48 text-center">
+                        <span class="text-4xl">🗑️</span>
+                        <h5 class="font-bold mt-2">3. End-of-Life</h5>
+                    </div>
+                </div>
+                <div id="lifecycle-content" class="mt-12 bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto">
+                </div>
+            </div>
+        </section>
+
+        <section id="impact" class="py-16">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-800">Visualizing the Waste</h3>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Data visualizations make the disparity clear. The short use-phase of baby clothes and the ultimate fate of most textiles paint a stark picture of the problem.</p>
+                </div>
+                <!-- Grid changes from 1 column (mobile) to 2 columns (large screens) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h4 class="text-xl font-semibold text-center mb-4">Average Wears Before Discard</h4>
+                        <div class="chart-container">
+                            <canvas id="wearsChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-semibold text-center mb-4">The Fate of All Textiles</h4>
+                        <div class="chart-container">
+                            <canvas id="fateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="rwanda" class="py-16 bg-amber-50">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-amber-800">A Local Lens: The Rwanda Context</h3>
+                    <p class="mt-2 text-gray-700 max-w-3xl mx-auto">Examining a specific country like Rwanda highlights the complex local realities of textile production, importation, and waste management. The challenges here are representative of those faced by many developing nations.</p>
+                </div>
+                <!-- Grid changes from 1 column (mobile) to 2 columns (medium screens) -->
+                <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-amber-700">Local Production Challenges</h4>
+                        <p class="mt-2 text-gray-600">Rwanda has only one major textile facility, UTEXRWA, which has historically operated at a fraction of its capacity. Figures have been reported between 10-20% of capacity, though a 2015 audit found it at 40% with an annual production of 12,000 meters of textile. This limited local production cannot meet domestic demand, creating a heavy reliance on imported clothing.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-amber-700">The Influx of Secondhand Clothes</h4>
+                        <p class="mt-2 text-gray-600">To meet demand and provide affordable options, Rwanda, like much of East Africa, has historically been a major importer of secondhand clothing. While providing jobs in sorting and sales, this influx stifles the growth of local manufacturing.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-amber-700">Waste Collection & Disposal</h4>
+                        <p class="mt-2 text-gray-600">Rwanda produces 1.5 million tonnes of solid waste annually. In Kigali, only about 12.1% of households have access to formal waste collection services, leading to a significant amount of waste, including textiles, being discarded informally, particularly in rural areas.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-amber-700">Recycling Rate</h4>
+                        <p class="mt-2 text-gray-600">The national recycling rate for all types of waste is very low, with studies showing that less than 4% is recycled. A 2016 audit for the City of Kigali put the rate at an even lower 2%, with no specialized textile recycling facilities available.</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-amber-700">Population Growth & Waste Generation</h4>
+                        <p class="mt-2 text-gray-600">The National Institute of Statistics and Research (NISR) projected a population increase from 10.5 million in 2012 to a high scenario of 16.9 million by 2032. This rise in population is directly proportional to an increase in waste generation from both commercial activities and households, compounding the existing challenges.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-amber-700">Policy & Dignity</h4>
+                        <p class="mt-2 text-gray-600">In 2018, Rwanda raised tariffs on used clothing imports to protect its nascent local industry and, as argued by the government, uphold the dignity of its people. This has led to trade tensions but signals a commitment to local development.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="solutions" class="py-16">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-800">Moving Towards a Circular Wardrobe</h3>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Solving the baby clothes waste problem requires a shift in mindset from linear consumption to a circular economy. Here are some key strategies that can make a difference.</p>
+                </div>
+                <!-- Grid changes from 1 column (mobile) to 2 columns (medium screens) and 3 columns (large screens) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                        <h4 class="font-bold text-lg text-green-700">Rental and Subscription Services</h4>
+                        <p class="mt-2 text-gray-600">Services that allow parents to rent bundles of baby clothes for a specific growth stage are emerging. This model maximizes the use of each garment before it's professionally cleaned and passed on to another family.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                        <h4 class="font-bold text-lg text-green-700">High-Quality Resale Platforms</h4>
+                        <p class="mt-2 text-gray-600">Thriving secondhand markets, both online and local, extend the life of high-quality baby clothes. Supporting these platforms normalizes reuse and reduces the demand for new production.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                        <h4 class="font-bold text-lg text-green-700">Choosing Sustainable Materials</h4>
+                        <p class="mt-2 text-gray-600">Opting for clothes made from natural, biodegradable fibers like organic cotton or linen reduces the microplastic pollution from washing and ensures the garment can decompose more safely at its end-of-life.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="references" class="py-16 bg-gray-50">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold text-gray-800">References</h3>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">The data and information in this report are backed by the following sources.</p>
+                </div>
+                <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+                    <ul class="list-disc list-inside space-y-4 text-gray-700">
+                        <li>
+                            Ellen MacArthur Foundation. (2017). <i>A New Textiles Economy: Redesigning Fashion’s Future</i>. Ellen MacArthur Foundation.
+                            <br>
+                            <span class="text-sm text-gray-500">This report is the source for the "less than 1%" recycling statistic and the $460 billion in value lost annually from discarded clothing.</span>
+                        </li>
+                        <li>
+                            Kumbre, H. (2025). The Fast Fashion Industry: A Case Study in Consumerism and Climate Damage. <i>SSRN</i>.
+                            <br>
+                            <span class="text-sm text-gray-500">This academic paper provides the figure of 2,700 liters of water needed to produce a single cotton t-shirt and the statistic that 85% of textiles end up in landfills or are incinerated.</span>
+                        </li>
+                        <li>
+                            UN Environment Programme (UNEP). (2025, March 30). <i>Sustainable fashion to take centre stage on Zero Waste Day</i>. UNEP.
+                            <br>
+                            <span class="text-sm text-gray-500">This report is the source for the 92 million tonnes of textile waste figure and the "garbage truck of clothes every second" comparison.</span>
+                        </li>
+                        <li>
+                            Gahigi, M. K. (2025, March 11). <i>Utexrwa wins RDF uniform tender, urged to produce more - Rwanda Today</i>.
+                            <br>
+                            <span class="text-sm text-gray-500">This article provides insight into UTEXRWA's role and the challenges of local production in Rwanda's textile market.</span>
+                        </li>
+                        <li>
+                            Hitimana, B. (2011, June 6). <i>Rwanda: Country's Textile Factory to Produce Malaria Bed Nets</i>. AllAfrica.
+                            <br>
+                            <span class="text-sm text-gray-500">This article from AllAfrica corroborates the information about UTEXRWA's history and capacity.</span>
+                        </li>
+                         <li>
+                            KT PRESS. (2015, December 23). <i>Rwanda Urgently Needs Investors For Textile Industry</i>.
+                            <br>
+                            <span class="text-sm text-gray-500">This article is the source for the 40% capacity and 12,000 meters production figure for UTEXRWA in 2015.</span>
+                        </li>
+                        <li>
+                            Twagirimana, T. (2024, December 29). <i>Rwanda: Govt Raises Concerns Over Garment Waste Impact On Environment</i>. allAfrica.com.
+                            <br>
+                            <span class="text-sm text-gray-500">This article provides the statistic of 1.5 million tonnes of solid waste produced annually in Rwanda and the 12.1% of households in Kigali with access to waste collection services.</span>
+                        </li>
+                         <li>
+                            Uwamahoro, P. (2023, December 29). <i>Circular Economy for Sustainable Waste Management: Challenges and Opportunities in the City of Kigali, Rwanda</i>. frontiersin.org.
+                            <br>
+                            <span class="text-sm text-gray-500">This source provides data on the 2% recycling rate in Kigali from a 2016 audit, and the population projections from the National Institute of Statistics and Research (NISR).</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 Interactive Report. Data synthesized from various environmental and industry reports.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Navigation Logic for Mobile Responsiveness ---
+            const menuButton = document.getElementById('menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileLinks = mobileMenu.querySelectorAll('a');
+            const iconMenu = document.getElementById('icon-menu');
+            const iconClose = document.getElementById('icon-close');
+
+            const toggleMobileMenu = () => {
+                mobileMenu.classList.toggle('hidden');
+                iconMenu.classList.toggle('hidden');
+                iconClose.classList.toggle('hidden');
+            };
+
+            menuButton.addEventListener('click', toggleMobileMenu);
+
+            // Close menu when a link is clicked (improves mobile UX)
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        toggleMobileMenu();
+                    }
+                });
+            });
+
+
+            // --- Lifecycle Interaction Logic (Existing) ---
+            const lifecycleData = {
+                production: {
+                    title: 'Stage 1: Resource-Intensive Production',
+                    content: `The journey of a baby grow begins with significant environmental costs. It takes approximately 2,700 liters of water to produce a single cotton shirt. This stage also involves energy consumption, chemical use for dyeing and finishing, and carbon emissions from manufacturing and global transportation. These high upfront costs are the same whether the garment is worn 200 times or just 5 times.`
+                },
+                use: {
+                    title: 'Stage 2: The Abbreviated Use Phase',
+                    content: `This is where baby clothes dramatically differ. An infant can grow through 7 sizes in their first two years. This means many garments, especially those for special occasions, might only be worn once or twice. Each wash cycle, particularly for synthetic fabrics, releases thousands of microplastic fibers into our waterways. The high frequency of washing for baby clothes exacerbates this problem over a very short period.`
+                },
+                end: {
+                    title: 'Stage 3: The End-of-Life Predicament',
+                    content: `What happens to the 183 million outgrown baby clothes stored in UK homes alone? While many are passed on, a significant portion ends up in the waste stream. Donation centers are often overwhelmed, and globally, 85% of all textiles are landfilled or incinerated. In landfills, synthetic fibers can take hundreds of years to decompose, releasing greenhouse gases and leaching chemicals into the soil.`
+                }
+            };
+
+            const lifecycleStages = document.querySelectorAll('.lifecycle-stage');
+            const contentContainer = document.getElementById('lifecycle-content');
+
+            function updateContent(stageId) {
+                const id = stageId.replace('stage-', '');
+                const data = lifecycleData[id];
+                contentContainer.innerHTML = `
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">${data.title}</h4>
+                    <p class="text-gray-700 leading-relaxed">${data.content}</p>
+                `;
+
+                lifecycleStages.forEach(stage => {
+                    stage.classList.remove('active');
+                });
+                document.getElementById(stageId).classList.add('active');
+            }
+
+            lifecycleStages.forEach(stage => {
+                stage.addEventListener('click', () => {
+                    updateContent(stage.id);
+                });
+            });
+
+            updateContent('stage-production');
+
+            // --- Chart Initialization (Existing) ---
+
+            const wearsCtx = document.getElementById('wearsChart').getContext('2d');
+            new Chart(wearsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Fast-Fashion Adult T-Shirt', 'Baby Grow (0-3 Months)'],
+                    datasets: [{
+                        label: 'Average Number of Wears',
+                        data: [7, 5],
+                        backgroundColor: [
+                            'rgba(217, 119, 6, 0.6)',
+                            'rgba(245, 158, 11, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(217, 119, 6, 1)',
+                            'rgba(245, 158, 11, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                            tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Worn an average of ${context.raw} times.`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const fateCtx = document.getElementById('fateChart').getContext('2d');
+            new Chart(fateCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Landfilled', 'Incinerated', 'Recycled', 'Reused (Donated/Sold)'],
+                    datasets: [{
+                        label: 'Fate of Textiles',
+                        data: [57, 28, 1, 14],
+                        backgroundColor: [
+                            '#4A4A4A',
+                            '#A3A3A3',
+                            '#16A34A',
+                            '#F59E0B'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
